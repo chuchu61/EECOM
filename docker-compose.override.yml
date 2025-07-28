@@ -1,0 +1,8 @@
+services:
+  backend:
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/exp_ecom_db
+      - JWT_SECRET_KEY=Zx8uQmN5tP2LrX7VjA3YwK9oR6dT1sF0
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    command: ["python", "start_backend.py"]

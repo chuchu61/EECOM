@@ -1,0 +1,89 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # #chạy file .prod khi build production
+    container_name: ecom_frontend
+    restart: unless-stopped
+    ports:
+      - "3030:3030"
+      - "3000:3000"
+    volumes:
+      # - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./frontend/next.config.ts:/app/next.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50k" # giới hạn kích thước file log (cỡ nhỏ để tương đương khoảng 200 dòng)
+        max-file: "1"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ecom_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data:ro
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/exp_ecom_db
+      - JWT_SECRET=your_jwt_secret
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    networks:
+      - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50k" # giới hạn kích thước file log (cỡ nhỏ để tương đương khoảng 200 dòng)
+        max-file: "1"
+
+  mongodb:
+    image: mongo:latest
+    container_name: ecom_mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=
+      - MONGO_INITDB_ROOT_PASSWORD=
+      - MONGO_INITDB_DATABASE=exp_ecom_db
+      - MONGODB_QUIET=true
+    command: mongod --quiet --logpath=/dev/null --logappend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - default
+
+volumes:
+  mongodb_data:
+    name: ecom_mongodb_data
+  mongodb_config:
+    name: ecom_mongodb_config
+  backend_python_modules:
+    name: ecom_backend_python_modules
+
+networks:
+  default:
+    name: ecom_network
+    driver: bridge
